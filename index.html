@@ -17,8 +17,8 @@
   --card:#161622;
   --fg:#eaeaf0;
   --muted:#8b8ba3;
-  --accent:#00d4aa;
-  --accent-dim:#00d4aa33;
+  --accent:#ffb300;
+  --accent-dim:#ffb30033;
   --border:#2a2a3e;
   --radius:14px;
   --shadow:0 8px 24px rgba(0,0,0,.4);
@@ -30,8 +30,8 @@
     --card:#ffffff;
     --fg:#1a1a2e;
     --muted:#6b6b80;
-    --accent:#00967a;
-    --accent-dim:#00967a22;
+    --accent:#e68a00;
+    --accent-dim:#e68a0022;
     --border:#d0d0e0;
     --shadow:0 8px 24px rgba(0,0,0,.08);
   }
@@ -78,11 +78,11 @@ footer a:hover{text-decoration:underline}
   .card{padding:.85rem}
 }
 @media (min-width:768px){
-  main{max-width:720px;margin:0 auto;width:100%}
+  main{max-width:640px;margin:0 auto;width:100%}
   header{padding:1.2rem 1rem}
 }
 @media (min-width:1024px){
-  main{max-width:640px}
+  main{max-width:560px}
   .card{padding:1.5rem}
   h1{font-size:1.3rem}
 }
@@ -165,22 +165,22 @@ function findCombinations(target){
     for(let tp=lower; tp<=upper; tp++){
       if(tp<minP || tp>maxP) continue;
       const path=new Array(N).fill(0);
-      dfs(0,k,tp,path,tp,mc,results,()=>calls++);
+      dfs(0,k,tp,path,tp,mc,results,()=>calls++,k);
       if(calls>LIMIT) return results;
     }
   }
   return results;
 
-  function dfs(idx, remK, remP, path, targetPrice, mc, results, tick){
+  function dfs(idx, remK, remP, path, targetPrice, mc, results, tick, totalK){
     tick();
     if(idx===N){
       if(remK===0 && remP===0){
-        results.push({counts:[...path], totalCount:targetPrice/targetPrice, totalPrice:targetPrice, avgPrice:targetPrice/targetPrice});
+        results.push({counts:[...path], totalCount:totalK, totalPrice:targetPrice, avgPrice:targetPrice/totalK});
       }
       return;
     }
     if(remK===0){
-      if(remP===0) results.push({counts:[...path], totalCount:targetPrice/targetPrice, totalPrice:targetPrice, avgPrice:targetPrice/targetPrice});
+      if(remP===0) results.push({counts:[...path], totalCount:totalK, totalPrice:targetPrice, avgPrice:targetPrice/totalK});
       return;
     }
     const minRem=remK*suffixMin[idx], maxRem=remK*suffixMax[idx];
@@ -201,7 +201,7 @@ function findCombinations(target){
 
     for(let c=maxC; c>=minC; c--){
       path[idx]=c;
-      dfs(idx+1, remK-c, remP-c*price, path, targetPrice, mc, results, tick);
+      dfs(idx+1, remK-c, remP-c*price, path, targetPrice, mc, results, tick, totalK);
       path[idx]=0;
     }
   }
