@@ -92,7 +92,7 @@ footer a:hover{text-decoration:underline}
 <div id="app">
 <header>
 <h1>新金色藏品均价查找器</h1>
-<div class="sub">51 种金色藏品 · 总数 ≤ 20 · 每种动态上限 · 四舍五入</div>
+<div class="sub">51 种金色藏品 · 总数 ≤ 20 · 每种动态上限 · 取整</div>
 </header>
 <main>
 <div class="card">
@@ -156,8 +156,8 @@ function findCombinations(target){
   const LIMIT=5_000_000;
 
   for(let k=1;k<=MAX_TOTAL;k++){
-    const lower=Math.ceil((target-0.5)*k);
-    const upper=Math.floor((target+0.5)*k-1e-9);
+    const lower=target*k;
+    const upper=(target+1)*k-1;
     if(lower>upper) continue;
     const minP=k*suffixMin[0], maxP=k*suffixMax[0];
     if(upper<minP || lower>maxP) continue;
