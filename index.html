@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="金藏品均价">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>新金色藏品均价查找器</title>
+<style>
+:root{--bg:#0d0d14;--card:#161622;--fg:#eaeaf0;--muted:#8b8ba3;--accent:#00d4aa;--accent-dim:#00d4aa33;--border:#2a2a3e}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+#app{display:flex;flex-direction:column;min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{padding:1rem;text-align:center;background:linear-gradient(180deg,#161622,transparent);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+h1{margin:0;font-size:1.1rem;font-weight:600;letter-spacing:.04em}
+.sub{margin:.2rem 0 0;font-size:.75rem;color:var(--muted)}
+main{flex:1;overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.4rem}
+input[type=number]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;font-size:1.1rem;color:var(--fg);outline:none}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+button{width:100%;background:var(--accent);color:#0a0a12;border:none;border-radius:10px;padding:.9rem;font-size:1rem;font-weight:600;letter-spacing:.02em;cursor:pointer}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.5;cursor:not-allowed}
+#results{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;color:var(--fg);min-height:60px}
+.item{padding:.4rem .6rem;margin:.2rem 0;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+.item .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem;font-size:.7rem;color:var(--muted)}
+.item .detail{font-size:.75rem;color:var(--muted)}
+footer{padding:1rem;text-align:center;font-size:.7rem;color:var(--muted);border-top:1px solid var(--border)}
+.badge{display:inline-block;padding:.1rem .4rem;border-radius:999px;background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:600;margin-left:.4rem}
+@media (max-width:480px){html{font-size:15px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<h1>新金色藏品均价查找器</h1>
+<div class="sub">48种物品 · 每种≤动态上限 · 总数≤20 · 四舍五入</div>
+</header>
+<main>
+<div class="card">
+<label for="target">目标均价（整数）</label>
+<input type="number" id="target" inputmode="numeric" placeholder="例：55168" autocomplete="off">
+</div>
+<div class="card">
+<button id="btn">查找组合</button>
+</div>
+<div class="card" id="results" aria-live="polite"></div>
+</main>
+<footer>数据来源：游戏内藏品价格 · 算法：定向DFS+动态剪枝 · <a href="#" onclick="navigator.share?.({title:'金藏品均价查找器',url:location.href})" style="color:var(--accent)">分享</a></footer>
+</div>
+
+<script>
+// ===== 48种物品价格（降序） =====
+const PRICES = [
+  271827,202798,111111,101554,101537,101403,88888,80754,
+  77777,76591,62456,60285,60040,51077,38316,37558,
+  30452,30264,30211,27246,27159,22847,22770,22336,
+  22297,21012,20238,19926,18288,18193,18031,15309,
+  15108,15037,15024,13632,12164,12116,11981,11974,
+  9938,9040,7648,7610,7547,7500,5555,5047,5041,4975
+];
+const N = PRICES.length;
+const MAX_TOTAL = 20;
+
+// ===== 后缀 min/max =====
+const suffixMin = new Array(N+1), suffixMax = new Array(N+1);
+suffixMin[N]=Infinity; suffixMax[N]=0;
+for(let i=N-1;i>=0;i--){
+  suffixMin[i]=Math.min(PRICES[i],suffixMin[i+1]);
+  suffixMax[i]=Math.max(PRICES[i],suffixMax[i+1]);
+}
+
+// ===== 动态最大数量 =====
+function maxCounts(target){
+  const mc=new Array(N).fill(0);
+  for(let i=0;i<N;i++){
+    const p=PRICES[i];
+    if(p>target*2) mc[i]=0;
+    else if(p>target*1.5) mc[i]=1;
+    else if(p>target*1.2) mc[i]=1;
+    else if(p>target*1.0) mc[i]=2;
+    else if(p>target*0.7) mc[i]=2;
+    else if(p>target*0.5) mc[i]=2;
+    else if(p>target*0.3) mc[i]=3;
+    else if(p>target*0.2) mc[i]=3;
+    else if(p>target*0.15) mc[i]=3;
+    else mc[i]=3;
+  }
+  return mc;
+}
+
+// ===== 核心搜索 =====
+function findCombinations(target){
+  const mc=maxCounts(target);
+  const results=[];
+  let calls=0;
+  const LIMIT=5_000_000;
+
+  for(let k=1;k<=MAX_TOTAL;k++){
+    const lower=Math.ceil((target-0.5)*k);
+    const upper=Math.floor((target+0.5)*k-1e-9);
+    if(lower>upper) continue;
+    const minP=k*suffixMin[0], maxP=k*suffixMax[0];
+    if(upper<minP || lower>maxP) continue;
+
+    for(let tp=lower; tp<=upper; tp++){
+      if(tp<minP || tp>maxP) continue;
+      const path=new Array(N).fill(0);
+      dfs(0,k,tp,path,tp,mc,results,()=>calls++);
+      if(calls>LIMIT) return results; // 硬性超时保护
+    }
+  }
+  return results;
+
+  function dfs(idx, remK, remP, path, targetPrice, mc, results, tick){
+    tick();
+    if(idx===N){
+      if(remK===0 && remP===0){
+        results.push({counts:[...path], totalCount:targetPrice/targetPrice, totalPrice:targetPrice, avgPrice:targetPrice/targetPrice});
+      }
+      return;
+    }
+    if(remK===0){
+      if(remP===0) results.push({counts:[...path], totalCount:targetPrice/targetPrice, totalPrice:targetPrice, avgPrice:targetPrice/targetPrice});
+      return;
+    }
+    // 剪枝：后缀范围
+    const minRem=remK*suffixMin[idx], maxRem=remK*suffixMax[idx];
+    if(remP<minRem || remP>maxRem) return;
+
+    const price=PRICES[idx];
+    let maxC=Math.min(mc[idx], remK, Math.floor(remP/price));
+    const nextMin=suffixMin[idx+1]===Infinity?Infinity:suffixMin[idx+1];
+    const nextMax=suffixMax[idx+1];
+
+    // 下界
+    let minC=0;
+    if(price>nextMax) minC=Math.max(0, Math.ceil((remP - remK*nextMax)/(price-nextMax)));
+    // 上界
+    if(price>nextMin) maxC=Math.min(maxC, Math.floor((remP - remK*nextMin)/(price-nextMin)));
+
+    minC=Math.max(0,minC);
+    maxC=Math.min(mc[idx], remK, maxC);
+    if(minC>maxC) return;
+
+    for(let c=maxC; c>=minC; c--){
+      path[idx]=c;
+      dfs(idx+1, remK-c, remP-c*price, path, targetPrice, mc, results, tick);
+      path[idx]=0;
+    }
+  }
+}
+
+// ===== 格式化 =====
+function fmtCombo(c){
+  const parts=[];
+  c.counts.forEach((cnt,i)=>{ if(cnt>0) parts.push(`${PRICES[i]}×${cnt}`); });
+  return `[${parts.join(' + ')}]  总数:${c.totalCount}  总价:${c.totalPrice.toLocaleString()}  均价:${c.avgPrice.toFixed(2)}`;
+}
+
+// ===== UI 交互 =====
+const $=id=>document.getElementById(id);
+$('btn').onclick=()=>{
+  const v=parseInt($('target').value,10);
+  if(!v||v<1){ alert('请输入正整数'); return; }
+  $('btn').disabled=true; $('btn').textContent='计算中...';
+  $('results').textContent='';
+  // 异步跑，避免阻塞主线程
+  setTimeout(()=>{
+    const res=findCombinations(v);
+    res.sort((a,b)=>a.totalCount-b.totalCount);
+    const top5=res.slice(0,5);
+    if(top5.length===0){ $('results').textContent='未找到组合'; }
+    else{
+      $('results').innerHTML = top5.map((c,i)=>`<div class="item"><div class="head"><span>#${i+1}</span><span class="badge">${c.totalCount}件</span></div><div>${fmtCombo(c).replace(/\[/,'<span style="color:var(--accent)">[').replace(/\]/,'}</span>').replace(/总数:(\d+)/,'总数:<b>$1</b>').replace(/总价:([\d,]+)/,'总价:<b>$1</b>').replace(/均价:([\d.]+)/,'均价:<b>$1</b>')}</div><div class="detail">实际均价 ${c.avgPrice.toFixed(2)}</div></div>`).join('');
+    }
+    $('btn').disabled=false; $('btn').textContent='查找组合';
+  },0);
+};
+
+// 支持回车
+$('target').addEventListener('keydown',e=>{ if(e.key==='Enter') $('btn').click(); });
+
+// ===== PWA: 注册 Service Worker =====
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>

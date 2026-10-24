@@ -1,0 +1,15 @@
+{
+  "name": "新金色藏品均价查找器",
+  "short_name": "金藏品均价",
+  "description": "48种物品，总数≤20，输入目标均价返回最少物品组合",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d0d14",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["utilities", "games"],
+  "lang": "zh-CN"
+}
