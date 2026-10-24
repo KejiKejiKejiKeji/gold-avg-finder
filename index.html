@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#1a1a2e">
+<meta name="theme-color" content="#0f0f1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="金藏品均价">
@@ -11,47 +11,101 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <title>新金色藏品均价查找器</title>
 <style>
-:root{--bg:#0d0d14;--card:#161622;--fg:#eaeaf0;--muted:#8b8ba3;--accent:#00d4aa;--accent-dim:#00d4aa33;--border:#2a2a3e}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
-#app{display:flex;flex-direction:column;min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-header{padding:1rem;text-align:center;background:linear-gradient(180deg,#161622,transparent);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
-h1{margin:0;font-size:1.1rem;font-weight:600;letter-spacing:.04em}
-.sub{margin:.2rem 0 0;font-size:.75rem;color:var(--muted)}
-main{flex:1;overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:1rem}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem}
+:root{
+  --bg:#0b0b12;
+  --bg-elev:#13131c;
+  --card:#161622;
+  --fg:#eaeaf0;
+  --muted:#8b8ba3;
+  --accent:#00d4aa;
+  --accent-dim:#00d4aa33;
+  --border:#2a2a3e;
+  --radius:14px;
+  --shadow:0 8px 24px rgba(0,0,0,.4);
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f4f4f8;
+    --bg-elev:#ffffff;
+    --card:#ffffff;
+    --fg:#1a1a2e;
+    --muted:#6b6b80;
+    --accent:#00967a;
+    --accent-dim:#00967a22;
+    --border:#d0d0e0;
+    --shadow:0 8px 24px rgba(0,0,0,.08);
+  }
+}
+*, *::before, *::after{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+#app{display:flex;flex-direction:column;min-height:100vh;
+padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,var(--card),transparent);
+border-bottom:1px solid var(--border);padding:1rem .8rem;text-align:center}
+h1{margin:0;font-size:clamp(1.05rem,2.5vw,1.25rem);font-weight:600;letter-spacing:.02em}
+.sub{margin:.25rem 0 0;font-size:.75rem;color:var(--muted)}
+main{flex:1;overflow:auto;padding:1rem .8rem;display:flex;flex-direction:column;gap:1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+box-shadow:var(--shadow);padding:1rem}
+@media (min-width:480px){.card{padding:1.25rem}}
 label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.4rem}
-input[type=number]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;font-size:1.1rem;color:var(--fg);outline:none}
+input[type=number]{width:100%;background:var(--bg-elev);border:1px solid var(--border);
+border-radius:10px;padding:.85rem 1rem;font-size:1.1rem;color:var(--fg);outline:none;transition:border .15s,box-shadow .15s}
 input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
-button{width:100%;background:var(--accent);color:#0a0a12;border:none;border-radius:10px;padding:.9rem;font-size:1rem;font-weight:600;letter-spacing:.02em;cursor:pointer}
+button{width:100%;background:var(--accent);color:#07090c;border:none;border-radius:10px;
+padding:.95rem 1rem;font-size:1rem;font-weight:600;letter-spacing:.02em;cursor:pointer;
+transition:transform .08s,filter .15s,background .15s}
 button:active{transform:scale(.98)}
 button:disabled{opacity:.5;cursor:not-allowed}
-#results{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;color:var(--fg);min-height:60px}
-.item{padding:.4rem .6rem;margin:.2rem 0;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
-.item .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem;font-size:.7rem;color:var(--muted)}
-.item .detail{font-size:.75rem;color:var(--muted)}
-footer{padding:1rem;text-align:center;font-size:.7rem;color:var(--muted);border-top:1px solid var(--border)}
-.badge{display:inline-block;padding:.1rem .4rem;border-radius:999px;background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:600;margin-left:.4rem}
-@media (max-width:480px){html{font-size:15px}}
+#results{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+font-size:.8rem;line-height:1.6;white-space:pre-wrap;color:var(--fg);min-height:60px}
+.item{padding:.55rem .75rem;margin:.35rem 0;background:var(--bg);border-radius:10px;
+border:1px solid var(--border);transition:transform .12s,box-shadow .12s}
+.item:hover,.item:focus-within{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.item .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;font-size:.7rem;color:var(--muted)}
+.badge{display:inline-block;padding:.1rem .45rem;border-radius:999px;
+background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:600}
+.item .detail{font-size:.7rem;color:var(--muted);margin-top:.15rem}
+footer{padding:1rem .8rem;text-align:center;font-size:.7rem;color:var(--muted);
+border-top:1px solid var(--border);margin-top:auto}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:420px){
+  html{font-size:15px}
+  .card{padding:.85rem}
+}
+@media (min-width:768px){
+  main{max-width:720px;margin:0 auto;width:100%}
+  header{padding:1.2rem 1rem}
+}
+@media (min-width:1024px){
+  main{max-width:640px}
+  .card{padding:1.5rem}
+  h1{font-size:1.3rem}
+}
 </style>
 </head>
 <body>
 <div id="app">
 <header>
 <h1>新金色藏品均价查找器</h1>
-<div class="sub">48种物品 · 每种≤动态上限 · 总数≤20 · 四舍五入</div>
+<div class="sub">51 种金色藏品 · 总数 ≤ 20 · 每种动态上限 · 四舍五入</div>
 </header>
 <main>
 <div class="card">
 <label for="target">目标均价（整数）</label>
-<input type="number" id="target" inputmode="numeric" placeholder="例：55168" autocomplete="off">
+<input type="number" id="target" inputmode="numeric" placeholder="例：55168" autocomplete="off" aria-label="目标均价">
 </div>
 <div class="card">
 <button id="btn">查找组合</button>
 </div>
-<div class="card" id="results" aria-live="polite"></div>
+<div class="card" id="results" aria-live="polite" role="region" aria-label="查找结果"></div>
 </main>
-<footer>数据来源：游戏内藏品价格 · 算法：定向DFS+动态剪枝 · <a href="#" onclick="navigator.share?.({title:'金藏品均价查找器',url:location.href})" style="color:var(--accent)">分享</a></footer>
+<footer>数据来源：ddangcalc 即刻落槌档案馆（1.4 版） · 算法：定向 DFS + 动态剪枝 ·
+<a href="#" onclick="navigator.share?.({title:'金藏品均价查找器',url:location.href})">分享</a></footer>
 </div>
 
 <script>
@@ -112,7 +166,7 @@ function findCombinations(target){
       if(tp<minP || tp>maxP) continue;
       const path=new Array(N).fill(0);
       dfs(0,k,tp,path,tp,mc,results,()=>calls++);
-      if(calls>LIMIT) return results; // 硬性超时保护
+      if(calls>LIMIT) return results;
     }
   }
   return results;
@@ -129,7 +183,6 @@ function findCombinations(target){
       if(remP===0) results.push({counts:[...path], totalCount:targetPrice/targetPrice, totalPrice:targetPrice, avgPrice:targetPrice/targetPrice});
       return;
     }
-    // 剪枝：后缀范围
     const minRem=remK*suffixMin[idx], maxRem=remK*suffixMax[idx];
     if(remP<minRem || remP>maxRem) return;
 
@@ -138,10 +191,8 @@ function findCombinations(target){
     const nextMin=suffixMin[idx+1]===Infinity?Infinity:suffixMin[idx+1];
     const nextMax=suffixMax[idx+1];
 
-    // 下界
     let minC=0;
     if(price>nextMax) minC=Math.max(0, Math.ceil((remP - remK*nextMax)/(price-nextMax)));
-    // 上界
     if(price>nextMin) maxC=Math.min(maxC, Math.floor((remP - remK*nextMin)/(price-nextMin)));
 
     minC=Math.max(0,minC);
@@ -169,21 +220,18 @@ $('btn').onclick=()=>{
   const v=parseInt($('target').value,10);
   if(!v||v<1){ alert('请输入正整数'); return; }
   $('btn').disabled=true; $('btn').textContent='计算中...';
-  $('results').textContent='';
-  // 异步跑，避免阻塞主线程
+  $('results').innerHTML='';
   setTimeout(()=>{
     const res=findCombinations(v);
     res.sort((a,b)=>a.totalCount-b.totalCount);
     const top5=res.slice(0,5);
     if(top5.length===0){ $('results').textContent='未找到组合'; }
     else{
-      $('results').innerHTML = top5.map((c,i)=>`<div class="item"><div class="head"><span>#${i+1}</span><span class="badge">${c.totalCount}件</span></div><div>${fmtCombo(c).replace(/\[/,'<span style="color:var(--accent)">[').replace(/\]/,'}</span>').replace(/总数:(\d+)/,'总数:<b>$1</b>').replace(/总价:([\d,]+)/,'总价:<b>$1</b>').replace(/均价:([\d.]+)/,'均价:<b>$1</b>')}</div><div class="detail">实际均价 ${c.avgPrice.toFixed(2)}</div></div>`).join('');
+      $('results').innerHTML = top5.map((c,i)=>`<div class="item" tabindex="0"><div class="head"><span>#${i+1}</span><span class="badge">${c.totalCount}件</span></div><div>${fmtCombo(c).replace(/\[/,'<span style="color:var(--accent)">[').replace(/\]/,'}</span>').replace(/总数:(\d+)/,'总数:<b>$1</b>').replace(/总价:([\d,]+)/,'总价:<b>$1</b>').replace(/均价:([\d.]+)/,'均价:<b>$1</b>')}</div><div class="detail">实际均价 ${c.avgPrice.toFixed(2)}</div></div>`).join('');
     }
     $('btn').disabled=false; $('btn').textContent='查找组合';
   },0);
 };
-
-// 支持回车
 $('target').addEventListener('keydown',e=>{ if(e.key==='Enter') $('btn').click(); });
 
 // ===== PWA: 注册 Service Worker =====
